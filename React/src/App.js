@@ -129,7 +129,7 @@ function App() {
         return (
             <div className="dashboard-container">
                 <div className="loading-state">
-                    <h2>Initializing System...</h2>
+                    <h2>Loading...</h2>
                 </div>
             </div>
         );
