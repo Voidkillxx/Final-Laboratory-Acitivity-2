@@ -62,8 +62,8 @@ function App() {
                     id: item.id,
                     productName: item.productName || item.product_name,
                     currentInventory: item.currentInventory || item.current_inventory,
-                    avgSalesPerWeek: parseFloat(item.avgSalesPerWeek || item.avg_sales_per_week),
-                    daysToReplenish: parseFloat(item.daysToReplenish || item.days_to_replenish),
+                    avgSalesPerWeek: Math.round(parseFloat(item.avgSalesPerWeek || item.avg_sales_per_week)),
+                    daysToReplenish: Math.round(parseFloat(item.daysToReplenish || item.days_to_replenish)),
                 }));
 
                 // Run Predictions
@@ -75,7 +75,7 @@ function App() {
                         ...product,
                         predictionScore: predictionScore.toFixed(3),
                         needsReorder,
-                        daysOfSupply: (product.currentInventory / (product.avgSalesPerWeek / 7)).toFixed(1)
+                        daysOfSupply: Math.round((product.currentInventory / (product.avgSalesPerWeek / 7)).toFixed(1))
                     };
                 });
                 

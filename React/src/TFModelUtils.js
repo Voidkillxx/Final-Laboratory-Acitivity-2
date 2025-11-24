@@ -1,28 +1,36 @@
 import * as tf from '@tensorflow/tfjs';
 
-const EPOCHS = 20;
-const TRAINING_SAMPLES = 1000; // Number of synthetic samples to train the model
+const EPOCHS = 30;
+const TRAINING_SAMPLES = 1000;
+
+// Normalization Constants (Scales inputs to 0-1 range for stability)
+const MAX_INVENTORY = 1000;
+const MAX_SALES = 200;
+const MAX_LEAD_TIME = 50;
 
 export const generateClassificationData = () => {
-    const xs = []; // Input Features: [inventory, avgSalesPerWeek, daysToReplenish]
-    const ys = []; // Output Label: [0] = No Reorder, [1] = Reorder
+    const xs = []; 
+    const ys = [];
 
     for (let i = 0; i < TRAINING_SAMPLES; i++) {
-        const inventory = Math.random() * 500;
-        const avgSalesPerWeek = Math.random() * 80 + 5;
+        const inventory = Math.random() * 800;
+        const avgSalesPerWeek = Math.random() * 100 + 5;
         const daysToReplenish = Math.random() * 20 + 3;
 
         const avgSalesPerDay = avgSalesPerWeek / 7;
-        // Logic used to generate the correct 'y' label for training the classifier
         const reorderPoint = avgSalesPerDay * daysToReplenish * 1.5;
-
         const isReorderNeeded = inventory < reorderPoint ? 1 : 0;
 
-        xs.push([inventory, avgSalesPerWeek, daysToReplenish]);
+        // Normalize inputs
+        xs.push([
+            inventory / MAX_INVENTORY, 
+            avgSalesPerWeek / MAX_SALES, 
+            daysToReplenish / MAX_LEAD_TIME
+        ]);
+        
         ys.push([isReorderNeeded]);
     }
 
-    // Convert JavaScript arrays into TensorFlow 2D Tensors
     const trainingData = tf.tensor2d(xs);
     const outputData = tf.tensor2d(ys);
 
@@ -30,25 +38,23 @@ export const generateClassificationData = () => {
 };
 
 export const trainClassifierModel = async (trainingData, outputData) => {
-    // Sequential model structure required by the guide
     const model = tf.sequential();
     
-    // Hidden Layer: Takes 3 inputs and uses ReLU activation
+    // Model Architecture
     model.add(
-        tf.layers.dense({ inputShape: [3], units: 8, activation: 'relu' })
+        tf.layers.dense({ inputShape: [3], units: 12, activation: 'relu' })
     );
 
-    // Output Layer: Single unit with Sigmoid for binary classification (0 or 1)
     model.add(tf.layers.dense({ units: 1, activation: 'sigmoid' }));
 
-    // Compile model using Adam optimizer and binary crossentropy loss for classification
+    // Compilation
     model.compile({
-        optimizer: 'adam',
+        optimizer: tf.train.adam(0.01),
         loss: 'binaryCrossentropy',
         metrics: ['accuracy'],
     });
 
-    // Run training process for defined number of epochs
+    // Training
     await model.fit(trainingData, outputData, {
         epochs: EPOCHS,
         shuffle: true,
@@ -58,16 +64,18 @@ export const trainClassifierModel = async (trainingData, outputData) => {
 };
 
 export const runPrediction = async (model, product) => {
-    // Prepare the single product input as a 2D Tensor
+    // Normalize prediction input to match training data
     const newProductTensor = tf.tensor2d([
-        [product.currentInventory, product.avgSalesPerWeek, product.daysToReplenish]
+        [
+            product.currentInventory / MAX_INVENTORY, 
+            product.avgSalesPerWeek / MAX_SALES, 
+            product.daysToReplenish / MAX_LEAD_TIME
+        ]
     ]);
     
-    // Run the prediction
     const result = model.predict(newProductTensor);
     const value = (await result.data())[0];
     
-    // Crucial: Dispose of Tensors to prevent memory leak
     newProductTensor.dispose(); 
     
     return value;
