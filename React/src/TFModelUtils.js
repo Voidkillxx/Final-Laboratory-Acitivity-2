@@ -1,6 +1,6 @@
 import * as tf from '@tensorflow/tfjs';
 
-const EPOCHS = 30;
+const EPOCHS = 100;
 const TRAINING_SAMPLES = 1000;
 
 // Normalization Constants (Scales inputs to 0-1 range for stability)
